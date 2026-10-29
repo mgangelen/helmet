@@ -28,4 +28,5 @@
 {{ include "helmet.servicemonitor" . }}
 {{ include "helmet.cronjob" . }}
 {{ include "helmet.podmonitor" . }}
+{{ include "helmet.extraObjects" . }}
 {{- end }}

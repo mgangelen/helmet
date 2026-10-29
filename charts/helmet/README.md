@@ -179,6 +179,70 @@ application's resources. Attaching a Route to a Gateway in another namespace use
 
 Ingress and Routes can coexist during migration; enable them independently.
 
+## Extra objects and controller extensions
+
+`extraObjects` renders additional Kubernetes manifests without coupling Helmet
+to a controller or CRD schema. It accepts a list or map of complete objects or
+YAML strings; map keys only identify entries and are not added to the manifests.
+All entries are evaluated as Helm templates in the consuming application's context.
+`helmet.app` includes them automatically, or you can include
+`{{ include "helmet.extraObjects" . }}` directly.
+
+For example, with NGINX Gateway Fabric and its RateLimitPolicy CRD installed,
+attach a local rate limit to `route.main`:
+
+```yaml
+extraObjects:
+  - apiVersion: gateway.nginx.org/v1alpha1
+    kind: RateLimitPolicy
+    metadata:
+      name: '{{ include "common.names.fullname" . }}-rate-limit'
+      namespace: '{{ include "common.names.namespace" . }}'
+    spec:
+      targetRefs:
+        - group: gateway.networking.k8s.io
+          kind: HTTPRoute
+          name: '{{ include "common.names.fullname" . }}-main'
+      rateLimit:
+        local:
+          rules:
+            - key: $binary_remote_addr
+              zoneSize: 10m
+              rate: 10r/s
+```
+
+Match `targetRefs[].name` and the policy namespace to your Route, including any
+explicit name or namespace overrides. This example assumes the default generated
+name is shorter than 63 characters; otherwise use the Route's truncated name or an
+explicit Route name. These settings are interpreted by NGINX Gateway Fabric, not
+by Helmet. Other controllers can use their own policy resources through the same
+`extraObjects` field. See the
+[NGINX RateLimitPolicy documentation](https://docs.nginx.com/nginx-gateway-fabric/traffic-management/rate-limit/)
+for version requirements and behavior.
+
+For filter-based extensions, supply the companion custom resource through
+`extraObjects` and reference its name from the Route's native filter:
+
+```yaml
+# Within route.main.rules[]:
+filters:
+  - type: ExtensionRef
+    extensionRef:
+      group: gateway.nginx.org
+      kind: SnippetsFilter
+      name: app-cache
+```
+
+The example filter requires a separately defined `SnippetsFilter` named `app-cache`
+in the Route namespace and snippet support enabled in the controller. Helmet passes
+the filter through unchanged. Platform configuration owns controller enablement,
+shared cache storage and zones, and Gateway-wide policies.
+
+Supply all required metadata yourself; Helmet does not inject names, namespaces,
+common labels, or annotations into extra objects. The library does not install
+CRDs or validate controller-specific specs. Extra objects are part of the Helm
+release and follow its normal upgrade and uninstall lifecycle.
+
 ## Parameters
 
 ### Global parameters

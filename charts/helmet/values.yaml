@@ -68,6 +68,30 @@ exports:
     ##
     commonAnnotations: {}
 
+    ## @param extraObjects Additional Kubernetes manifests, evaluated as Helm templates.
+    ## Accepts a list or map of objects or YAML strings; map keys are identifiers only.
+    ## Supply complete manifests, including metadata. No metadata is added or merged.
+    ## Install any required controller and CRDs separately.
+    ## Example: application policy for NGINX Gateway Fabric, targeting route.main.
+    ## extraObjects:
+    ##   - apiVersion: gateway.nginx.org/v1alpha1
+    ##     kind: RateLimitPolicy
+    ##     metadata:
+    ##       name: '{{ include "common.names.fullname" . }}-rate-limit'
+    ##       namespace: '{{ include "common.names.namespace" . }}'
+    ##     spec:
+    ##       targetRefs:
+    ##         - group: gateway.networking.k8s.io
+    ##           kind: HTTPRoute
+    ##           name: '{{ include "common.names.fullname" . }}-main'
+    ##       rateLimit:
+    ##         local:
+    ##           rules:
+    ##             - key: $binary_remote_addr
+    ##               zoneSize: 10m
+    ##               rate: 10r/s
+    extraObjects: []
+
     ## @section Helmet parameters
 
     ## Helmet (App) image version
