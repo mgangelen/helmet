@@ -72,7 +72,7 @@ exports:
     ## Accepts a list or map of objects or YAML strings; map keys are identifiers only.
     ## Supply complete manifests, including metadata. No metadata is added or merged.
     ## Install any required controller and CRDs separately.
-    ## Example: application policy for NGINX Gateway Fabric, targeting route.main.
+    ## Example 1: application policy for NGINX Gateway Fabric, targeting route.main.
     ## extraObjects:
     ##   - apiVersion: gateway.nginx.org/v1alpha1
     ##     kind: RateLimitPolicy
@@ -90,6 +90,61 @@ exports:
     ##             - key: $binary_remote_addr
     ##               zoneSize: 10m
     ##               rate: 10r/s
+    ##
+    ## Example 2: Envoy Gateway: local rate limit targeting route.main.
+    ## Requires Envoy Gateway and its BackendTrafficPolicy CRD.
+    ## extraObjects:
+    ##   - apiVersion: gateway.envoyproxy.io/v1alpha1
+    ##     kind: BackendTrafficPolicy
+    ##     metadata:
+    ##       name: '{{ include "common.names.fullname" . }}-envoy-rate-limit'
+    ##       namespace: '{{ include "common.names.namespace" . }}'
+    ##     spec:
+    ##       targetRefs:
+    ##         - group: gateway.networking.k8s.io
+    ##           kind: HTTPRoute
+    ##           name: '{{ include "common.names.fullname" . }}-main'
+    ##       rateLimit:
+    ##         local:
+    ##           rules:
+    ##             - limit:
+    ##                 requests: 10
+    ##                 unit: Second
+    ##
+    ## Example 3: Traefik: Middleware referenced by an HTTPRoute ExtensionRef filter.
+    ## Requires Traefik Gateway and Kubernetes CRD providers and Middleware CRD.
+    ## extraObjects:
+    ##   - apiVersion: traefik.io/v1alpha1
+    ##     kind: Middleware
+    ##     metadata:
+    ##       name: '{{ include "common.names.fullname" . }}-prefix'
+    ##       namespace: '{{ include "common.names.namespace" . }}'
+    ##     spec:
+    ##       addPrefix:
+    ##         prefix: /api
+    ##
+    ## # Add to the appropriate rule under route.main.rules:
+    ## filters:
+    ##   - type: ExtensionRef
+    ##     extensionRef:
+    ##       group: traefik.io
+    ##       kind: Middleware
+    ##       name: '{{ include "common.names.fullname" . }}-prefix'
+    ##
+    ## Example 4: Standard Kubernetes ConfigMap supplied as a YAML string (no extra CRDs).
+    ## extraObjects:
+    ##   - |
+    ##     apiVersion: v1
+    ##     kind: ConfigMap
+    ##     metadata:
+    ##       name: '{{ include "common.names.fullname" . }}-settings'
+    ##       namespace: '{{ include "common.names.namespace" . }}'
+    ##     data:
+    ##       settings.yaml: |
+    ##         logLevel: info
+    ##         featureEnabled: true
+    ##
+    ## Choose examples for your controller. Combine entries under one extraObjects list.
     extraObjects: []
 
     ## @section Helmet parameters

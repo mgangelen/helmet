@@ -243,6 +243,89 @@ common labels, or annotations into extra objects. The library does not install
 CRDs or validate controller-specific specs. Extra objects are part of the Helm
 release and follow its normal upgrade and uninstall lifecycle.
 
+### More extra object examples
+
+Choose the examples matching your installed controller. When combining examples,
+put their entries in a single `extraObjects` list.
+
+Envoy Gateway: local rate limit targeting route.main.
+
+```yaml
+extraObjects:
+  - apiVersion: gateway.envoyproxy.io/v1alpha1
+    kind: BackendTrafficPolicy
+    metadata:
+      name: '{{ include "common.names.fullname" . }}-envoy-rate-limit'
+      namespace: '{{ include "common.names.namespace" . }}'
+    spec:
+      targetRefs:
+        - group: gateway.networking.k8s.io
+          kind: HTTPRoute
+          name: '{{ include "common.names.fullname" . }}-main'
+      rateLimit:
+        local:
+          rules:
+            - limit:
+                requests: 10
+                unit: Second
+```
+
+Requires Envoy Gateway and its BackendTrafficPolicy CRD. This limit is local
+to each Envoy instance, rather than a shared quota across replicas. As in the NGINX
+example, match the target name and namespace to your Route overrides. See
+[Envoy Gateway local rate limiting](https://gateway.envoyproxy.io/latest/tasks/traffic/local-rate-limit/).
+
+Traefik: Middleware referenced by an HTTPRoute ExtensionRef filter.
+
+```yaml
+extraObjects:
+  - apiVersion: traefik.io/v1alpha1
+    kind: Middleware
+    metadata:
+      name: '{{ include "common.names.fullname" . }}-prefix'
+      namespace: '{{ include "common.names.namespace" . }}'
+    spec:
+      addPrefix:
+        prefix: /api
+```
+
+Creating a Middleware does not attach it automatically. Add this filter to the
+application Route rule in the same namespace:
+
+```yaml
+# Add to the appropriate rule under route.main.rules:
+filters:
+  - type: ExtensionRef
+    extensionRef:
+      group: traefik.io
+      kind: Middleware
+      name: '{{ include "common.names.fullname" . }}-prefix'
+```
+
+Traefik must have both its Gateway and Kubernetes CRD providers enabled, with
+the Middleware CRD installed. See
+[Traefik Gateway API middleware filters](https://doc.traefik.io/traefik/reference/routing-configuration/kubernetes/gateway-api/).
+
+Standard Kubernetes ConfigMap supplied as a YAML string (no extra CRDs).
+
+```yaml
+extraObjects:
+  - |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: '{{ include "common.names.fullname" . }}-settings'
+      namespace: '{{ include "common.names.namespace" . }}'
+    data:
+      settings.yaml: |
+        logLevel: info
+        featureEnabled: true
+```
+
+This demonstrates a multiline YAML string and Helm template evaluation. Mount
+or reference the ConfigMap explicitly in your application when needed; rendering
+an extra object does not automatically wire it into the Deployment.
+
 ## Parameters
 
 ### Global parameters
