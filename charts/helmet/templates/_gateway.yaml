@@ -59,7 +59,7 @@ metadata:
 spec: {{- toYaml .spec | nindent 2 }}
 {{ end -}}
 
-{{/* Named application Routes and optional native backend TLS policies. */}}
+{{/* Named application Routes for existing Gateways. */}}
 {{- define "helmet.gateway" -}}
 {{- $context := . -}}
 {{- range $id, $raw := (.Values.route | default dict) -}}
@@ -86,11 +86,5 @@ spec: {{- toYaml .spec | nindent 2 }}
 {{- end -}}
 {{ include "helmet.gateway.resource" (dict "context" $context "resource" $resource "kind" $kind "name" $name "namespace" $namespace "spec" (required (printf "route.%s requires a non-empty route spec" $id) $spec)) }}
 {{- end -}}
-{{- end -}}
-{{- range $raw := ((.Values.gateway | default dict).backendTLSPolicies | default list) -}}
-{{- $resource := include "common.tplvalues.render" (dict "value" $raw "context" $context) | fromYaml -}}
-{{- $name := required "gateway.backendTLSPolicies entries require a name" $resource.name -}}
-{{- $spec := required (printf "gateway.backendTLSPolicies[%s] requires a non-empty spec" $name) $resource.spec -}}
-{{ include "helmet.gateway.resource" (dict "context" $context "resource" $resource "kind" "BackendTLSPolicy" "name" $name "namespace" (default (include "common.names.namespace" $context) $resource.namespace) "spec" $spec) }}
 {{- end -}}
 {{- end -}}

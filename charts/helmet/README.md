@@ -73,12 +73,11 @@ $ helm install nginx .
 
 ## Gateway API
 
-`helmet.app` includes `helmet.gateway` automatically. Routes and backend TLS policies default
+`helmet.app` includes `helmet.gateway` automatically. Routes default
 to empty, so existing deployments are unchanged. You can also include
 `{{ include "helmet.gateway" . }}` directly when composing individual templates.
 
-Helmet manages application Routes and optional BackendTLSPolicy resources for
-application-owned Services. Platform configuration owns GatewayClass, Gateway,
+Helmet manages application Routes. Platform configuration owns GatewayClass, Gateway,
 ListenerSet, and ReferenceGrant resources; Helmet does not create them.
 
 Install the [Gateway API CRDs](https://gateway-api.sigs.k8s.io/guides/) and a
@@ -87,8 +86,7 @@ or controller. Each resource's features must be supported by your controller.
 The default API version is `gateway.networking.k8s.io/v1`, targeting Gateway API
 1.5+ CRDs. For older installations, set `apiVersion` on each entry to a version
 served by your CRDs, for example `gateway.networking.k8s.io/v1alpha2` for older
-TCPRoute/UDPRoute/TLSRoute, or `gateway.networking.k8s.io/v1alpha3` for
-BackendTLSPolicy.
+TCPRoute/UDPRoute/TLSRoute.
 
 To attach your application to an existing shared Gateway:
 
@@ -168,10 +166,6 @@ native Kubernetes syntax. There is no implicit backend or rule: configure
 support path/header/method matches, traffic weights, redirects, rewrites, and
 controller-supported timeouts.
 
-Optional native BackendTLSPolicy entries are configured under
-`gateway.backendTLSPolicies`, with required `name` and `spec` and optional
-`namespace`, `apiVersion`, `labels`, and `annotations`.
-
 See [the HTTPRoute example](examples/gateway/values.yaml) for an application
 using a shared Gateway. The platform manages the Gateway's HTTPS listener and
 certificate. TLS settings on `ingress` apply only to Ingress.
@@ -182,29 +176,6 @@ require a ReferenceGrant in the **target** namespace, managed by that resource's
 owner outside Helmet. A client application must not grant itself access to another
 application's resources. Attaching a Route to a Gateway in another namespace uses
 `allowedRoutes`, not a ReferenceGrant.
-
-When the application's backend itself serves HTTPS, optionally configure a
-BackendTLSPolicy for its Service:
-
-```yaml
-gateway:
-  backendTLSPolicies:
-    - name: '{{ include "common.names.fullname" . }}-tls'
-      spec:
-        targetRefs:
-          - group: ""
-            kind: Service
-            name: '{{ include "common.names.fullname" . }}'
-        validation:
-          hostname: app.internal.example.com
-          wellKnownCACertificates: System
-```
-
-The policy must live in the Service's namespace. The backend must serve TLS on the
-Service port referenced by the Route, using a certificate valid for the configured
-hostname and trusted by the configured CA source. This example uses system trust;
-use `caCertificateRefs` for a private CA. Backend TLS is separate from HTTPS
-termination at the Gateway.
 
 Ingress and Routes can coexist during migration; enable them independently.
 

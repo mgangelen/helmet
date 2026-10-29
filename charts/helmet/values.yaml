@@ -627,12 +627,44 @@ exports:
     ## under each entry, alongside optional name, namespace, apiVersion and metadata.
     ## Use backendRefs[].identifier: app to target Helmet's Service and resolve a
     ## named Service port, e.g. port: http. Explicit native backends are supported.
+    ## Example 1: HTTP traffic from an existing shared Gateway to this app.
+    ## route:
+    ##   main:
+    ##     kind: HTTPRoute
+    ##     parentRefs:
+    ##       - name: shared-gateway
+    ##         namespace: infrastructure
+    ##         sectionName: https
+    ##     hostnames:
+    ##       - app.example.com
+    ##     rules:
+    ##       - matches:
+    ##           - path:
+    ##               type: PathPrefix
+    ##               value: /
+    ##         backendRefs:
+    ##           - identifier: app
+    ##             port: http
+    ##
+    ## Example 2: Redirect HTTP requests to HTTPS (no backend required).
+    ## route:
+    ##   redirect:
+    ##     kind: HTTPRoute
+    ##     parentRefs:
+    ##       - name: shared-gateway
+    ##         namespace: infrastructure
+    ##         sectionName: http
+    ##     hostnames:
+    ##       - app.example.com
+    ##     rules:
+    ##       - filters:
+    ##           - type: RequestRedirect
+    ##             requestRedirect:
+    ##               scheme: https
+    ##               statusCode: 301
+    ##
+    ## To use both examples, put main and redirect under the same route map.
     route: {}
-
-    ## @param gateway.backendTLSPolicies Optional native TLS policies for owned Services
-    ## Entries require name and spec; optional namespace, apiVersion, labels, annotations.
-    gateway:
-      backendTLSPolicies: []
 
     ## Enable persistence using Persistent Volume Claims
     ## ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
