@@ -77,7 +77,7 @@ $ helm install nginx .
 to empty, so existing deployments are unchanged. You can also include
 `{{ include "helmet.gateway" . }}` directly when composing individual templates.
 
-Helmet manages application Routes. Platform configuration owns GatewayClass, Gateway,
+Helmet manages application Routes. Infrastructure configuration owns GatewayClass, Gateway,
 ListenerSet, and ReferenceGrant resources; Helmet does not create them.
 
 Install the [Gateway API CRDs](https://gateway-api.sigs.k8s.io/guides/) and a
@@ -167,7 +167,7 @@ support path/header/method matches, traffic weights, redirects, rewrites, and
 controller-supported timeouts.
 
 See [the HTTPRoute example](examples/gateway/values.yaml) for an application
-using a shared Gateway. The platform manages the Gateway's HTTPS listener and
+using a shared Gateway. The infrastructure manages the Gateway's HTTPS listener and
 certificate. TLS settings on `ingress` apply only to Ingress.
 
 For cross-namespace Route attachment, the Gateway listener's `allowedRoutes` must
@@ -235,7 +235,7 @@ filters:
 
 The example filter requires a separately defined `SnippetsFilter` named `app-cache`
 in the Route namespace and snippet support enabled in the controller. Helmet passes
-the filter through unchanged. Platform configuration owns controller enablement,
+the filter through unchanged. Infrastructure configuration owns controller enablement,
 shared cache storage and zones, and Gateway-wide policies.
 
 Supply all required metadata yourself; Helmet does not inject names, namespaces,

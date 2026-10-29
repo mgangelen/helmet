@@ -1,5 +1,5 @@
 # Use with an application chart that imports Helmet defaults and includes helmet.app.
-# The platform must provide shared-gateway and its HTTPS listener in infrastructure.
+# The infrastructure must provide shared-gateway and its HTTPS listener in infrastructure.
 image:
   repository: nginx
 ports:
