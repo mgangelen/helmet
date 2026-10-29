@@ -41,7 +41,7 @@
 {{- end -}}
 
 {{/* Shared metadata and native spec renderer for application Gateway API resources. */}}
-{{- define "helmet.gatewayAPI.resource" -}}
+{{- define "helmet.gateway.resource" -}}
 {{- $context := .context -}}
 {{- $resource := .resource -}}
 {{- $labels := include "common.tplvalues.merge" (dict "values" (list ($resource.labels | default dict) $context.Values.commonLabels) "context" $context) | fromYaml -}}
@@ -60,7 +60,7 @@ spec: {{- toYaml .spec | nindent 2 }}
 {{ end -}}
 
 {{/* Named application Routes and optional native backend TLS policies. */}}
-{{- define "helmet.gatewayAPI" -}}
+{{- define "helmet.gateway" -}}
 {{- $context := . -}}
 {{- range $id, $raw := (.Values.route | default dict) -}}
 {{- if or (not (hasKey $raw "enabled")) $raw.enabled -}}
@@ -84,13 +84,13 @@ spec: {{- toYaml .spec | nindent 2 }}
     {{- $_ := set $rule "backendRefs" $backends -}}
   {{- end -}}
 {{- end -}}
-{{ include "helmet.gatewayAPI.resource" (dict "context" $context "resource" $resource "kind" $kind "name" $name "namespace" $namespace "spec" (required (printf "route.%s requires a non-empty route spec" $id) $spec)) }}
+{{ include "helmet.gateway.resource" (dict "context" $context "resource" $resource "kind" $kind "name" $name "namespace" $namespace "spec" (required (printf "route.%s requires a non-empty route spec" $id) $spec)) }}
 {{- end -}}
 {{- end -}}
-{{- range $raw := ((.Values.gatewayAPI | default dict).backendTLSPolicies | default list) -}}
+{{- range $raw := ((.Values.gateway | default dict).backendTLSPolicies | default list) -}}
 {{- $resource := include "common.tplvalues.render" (dict "value" $raw "context" $context) | fromYaml -}}
-{{- $name := required "gatewayAPI.backendTLSPolicies entries require a name" $resource.name -}}
-{{- $spec := required (printf "gatewayAPI.backendTLSPolicies[%s] requires a non-empty spec" $name) $resource.spec -}}
-{{ include "helmet.gatewayAPI.resource" (dict "context" $context "resource" $resource "kind" "BackendTLSPolicy" "name" $name "namespace" (default (include "common.names.namespace" $context) $resource.namespace) "spec" $spec) }}
+{{- $name := required "gateway.backendTLSPolicies entries require a name" $resource.name -}}
+{{- $spec := required (printf "gateway.backendTLSPolicies[%s] requires a non-empty spec" $name) $resource.spec -}}
+{{ include "helmet.gateway.resource" (dict "context" $context "resource" $resource "kind" "BackendTLSPolicy" "name" $name "namespace" (default (include "common.names.namespace" $context) $resource.namespace) "spec" $spec) }}
 {{- end -}}
 {{- end -}}

@@ -629,9 +629,9 @@ exports:
     ## named Service port, e.g. port: http. Explicit native backends are supported.
     route: {}
 
-    ## @param gatewayAPI.backendTLSPolicies Optional native TLS policies for owned Services
+    ## @param gateway.backendTLSPolicies Optional native TLS policies for owned Services
     ## Entries require name and spec; optional namespace, apiVersion, labels, annotations.
-    gatewayAPI:
+    gateway:
       backendTLSPolicies: []
 
     ## Enable persistence using Persistent Volume Claims

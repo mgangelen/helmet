@@ -73,9 +73,9 @@ $ helm install nginx .
 
 ## Gateway API
 
-`helmet.app` includes `helmet.gatewayAPI` automatically. Routes and backend TLS policies default
+`helmet.app` includes `helmet.gateway` automatically. Routes and backend TLS policies default
 to empty, so existing deployments are unchanged. You can also include
-`{{ include "helmet.gatewayAPI" . }}` directly when composing individual templates.
+`{{ include "helmet.gateway" . }}` directly when composing individual templates.
 
 Helmet manages application Routes and optional BackendTLSPolicy resources for
 application-owned Services. Platform configuration owns GatewayClass, Gateway,
@@ -168,14 +168,11 @@ native Kubernetes syntax. There is no implicit backend or rule: configure
 support path/header/method matches, traffic weights, redirects, rewrites, and
 controller-supported timeouts.
 
-This named-route interface replaces the earlier, unreleased
-`gatewayAPI.httpRoutes`/`grpcRoutes`/`tlsRoutes`/`tcpRoutes`/`udpRoutes` lists.
-Move each entry to `route.<key>`, set its `kind`, and move the contents of `spec`
-directly under that entry. Optional native BackendTLSPolicy entries remain under
-`gatewayAPI.backendTLSPolicies`, with required `name` and `spec` and optional
+Optional native BackendTLSPolicy entries are configured under
+`gateway.backendTLSPolicies`, with required `name` and `spec` and optional
 `namespace`, `apiVersion`, `labels`, and `annotations`.
 
-See [the HTTPRoute example](examples/gateway-api/values.yaml) for an application
+See [the HTTPRoute example](examples/gateway/values.yaml) for an application
 using a shared Gateway. The platform manages the Gateway's HTTPS listener and
 certificate. TLS settings on `ingress` apply only to Ingress.
 
@@ -190,7 +187,7 @@ When the application's backend itself serves HTTPS, optionally configure a
 BackendTLSPolicy for its Service:
 
 ```yaml
-gatewayAPI:
+gateway:
   backendTLSPolicies:
     - name: '{{ include "common.names.fullname" . }}-tls'
       spec:
