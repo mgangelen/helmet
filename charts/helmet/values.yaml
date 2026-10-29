@@ -702,13 +702,15 @@ exports:
     ## Infrastructure configuration manages Gateway API CRDs, controllers, Gateways,
     ## GatewayClasses, ListenerSets and ReferenceGrants separately.
     ## @param route Named application routes. Kind defaults to HTTPRoute; entries
-    ## are enabled unless enabled: false. Native route spec fields go directly
+    ## are enabled by default. Set enabled: false on an entry to omit its resource.
+    ## This flag applies to every supported Route kind. Native spec fields go directly
     ## under each entry, alongside optional name, namespace, apiVersion and metadata.
     ## Use backendRefs[].identifier: app to target Helmet's Service and resolve a
     ## named Service port, e.g. port: http. Explicit native backends are supported.
     ## Example 1: HTTP traffic from an existing shared Gateway to this app.
     ## route:
     ##   main:
+    ##     enabled: true # Optional; routes are enabled by default.
     ##     kind: HTTPRoute
     ##     parentRefs:
     ##       - name: shared-gateway
@@ -728,6 +730,7 @@ exports:
     ## Example 2: Redirect HTTP requests to HTTPS (no backend required).
     ## route:
     ##   redirect:
+    ##     enabled: false # Set true to create this redirect Route.
     ##     kind: HTTPRoute
     ##     parentRefs:
     ##       - name: shared-gateway

@@ -93,6 +93,7 @@ To attach your application to an existing shared Gateway:
 ```yaml
 route:
   main:
+    enabled: true # Optional; defaults to true.
     kind: HTTPRoute
     parentRefs:
       - name: shared-gateway
@@ -111,7 +112,24 @@ route:
 ```
 
 `route` is a map keyed by a meaningful identifier such as `main`, `api`, or
-`redirect`. Entries are enabled by default; set `enabled: false` to disable one.
+`redirect`. Each entry supports `enabled`, which defaults to `true` when omitted.
+Set `enabled: false` to omit that Route's Kubernetes resource. This applies to all
+supported Route kinds, independently of other entries. For example, keep `main`
+enabled while disabling a configured redirect in an environment override:
+
+```yaml
+route:
+  main:
+    enabled: true
+  redirect:
+    enabled: false
+```
+
+This override assumes the full route definitions are supplied by your base values.
+Setting a previously deployed Route to `enabled: false` removes it from the Helm
+release on upgrade. Companion resources in `extraObjects` are configured separately;
+disabling a Route does not disable its policies or filters automatically.
+
 The default kind is `HTTPRoute`; supported kinds are `HTTPRoute`, `GRPCRoute`,
 `TLSRoute`, `TCPRoute`, and `UDPRoute`.
 

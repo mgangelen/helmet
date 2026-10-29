@@ -8,6 +8,7 @@ ports:
     protocol: TCP
 route:
   main:
+    enabled: true # Optional; defaults to true when omitted.
     kind: HTTPRoute
     parentRefs:
       - name: shared-gateway
@@ -23,3 +24,20 @@ route:
         backendRefs:
           - identifier: app
             port: http
+  # A configured Route can be kept disabled until needed in an environment.
+  # Set enabled: true to emit it; the infrastructure must provide an HTTP listener.
+  redirect:
+    enabled: false
+    kind: HTTPRoute
+    parentRefs:
+      - name: shared-gateway
+        namespace: infrastructure
+        sectionName: http
+    hostnames:
+      - app.example.com
+    rules:
+      - filters:
+          - type: RequestRedirect
+            requestRedirect:
+              scheme: https
+              statusCode: 301
