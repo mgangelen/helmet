@@ -1,3 +1,4 @@
 charts/**/charts
 charts/**/examples/**/charts
 charts/**/examples/**/charts/**/charts
+__pycache__/

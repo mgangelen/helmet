@@ -71,6 +71,164 @@ ingress:
 $ helm install nginx .
 ```
 
+## Gateway API
+
+`helmet.app` includes `helmet.gatewayAPI` automatically. Routes and backend TLS policies default
+to empty, so existing deployments are unchanged. You can also include
+`{{ include "helmet.gatewayAPI" . }}` directly when composing individual templates.
+
+Helmet manages application Routes and optional BackendTLSPolicy resources for
+application-owned Services. Platform configuration owns GatewayClass, Gateway,
+ListenerSet, and ReferenceGrant resources; Helmet does not create them.
+
+Install the [Gateway API CRDs](https://gateway-api.sigs.k8s.io/guides/) and a
+compatible Gateway controller separately. Helmet creates resources, not the CRDs
+or controller. Each resource's features must be supported by your controller.
+The default API version is `gateway.networking.k8s.io/v1`, targeting Gateway API
+1.5+ CRDs. For older installations, set `apiVersion` on each entry to a version
+served by your CRDs, for example `gateway.networking.k8s.io/v1alpha2` for older
+TCPRoute/UDPRoute/TLSRoute, or `gateway.networking.k8s.io/v1alpha3` for
+BackendTLSPolicy.
+
+To attach your application to an existing shared Gateway:
+
+```yaml
+route:
+  main:
+    kind: HTTPRoute
+    parentRefs:
+      - name: shared-gateway
+        namespace: infrastructure
+        sectionName: https
+    hostnames:
+      - app.example.com
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - identifier: app
+            port: http
+```
+
+`route` is a map keyed by a meaningful identifier such as `main`, `api`, or
+`redirect`. Entries are enabled by default; set `enabled: false` to disable one.
+The default kind is `HTTPRoute`; supported kinds are `HTTPRoute`, `GRPCRoute`,
+`TLSRoute`, `TCPRoute`, and `UDPRoute`.
+
+Resource names default to `<application-fullname>-<route-key>` (truncated to 63
+characters). Set `name` to override this. Entries also accept `namespace` (defaults
+to Helmet's namespace), `apiVersion`, `labels`, and `annotations`. All remaining
+fields become the native Route spec, including `parentRefs`, `hostnames`, and
+`rules`. Route values support templates evaluated in the consuming chart's context.
+Resource metadata merges with `commonLabels` and `commonAnnotations`, with resource
+values taking precedence. Keep route keys and names stable across upgrades.
+
+### Application Service references
+
+Helmet creates one application Service, identified by `app`. In
+`rules[].backendRefs`, use `identifier: app` to resolve its generated name and
+Service port. `port` accepts a name from `service.ports`, a numeric Service port,
+or a template resolving to either. If the Service has one port, `port` can be
+omitted; with multiple ports it is required. This uses Service ports rather than
+container ports or `targetPort`.
+
+For example, `identifier: app` with `port: http` renders as:
+
+```yaml
+backendRefs:
+  - name: my-release-my-app
+    port: 80
+```
+
+The identifier cannot be combined with a backend name, namespace, non-Service
+kind, or non-core group. Missing Services, unknown identifiers, and unknown ports
+produce rendering errors. If the Route is deployed in another namespace, Helmet
+sets the backend namespace to the application's Service namespace. The Service
+owner must provision any required ReferenceGrant separately.
+
+Explicit native backend references remain available:
+
+```yaml
+backendRefs:
+  - identifier: app
+    port: http
+    weight: 90
+  - name: canary
+    port: 8080
+    weight: 10
+```
+
+Explicit references use numeric Service ports and can include native `group`,
+`kind`, `namespace`, and filters. The `identifier` shorthand applies only to
+`rules[].backendRefs`; other references, such as request-mirror backends, use
+native Kubernetes syntax. There is no implicit backend or rule: configure
+`backendRefs` explicitly, or use filters for a redirect-only rule. Native fields
+support path/header/method matches, traffic weights, redirects, rewrites, and
+controller-supported timeouts.
+
+This named-route interface replaces the earlier, unreleased
+`gatewayAPI.httpRoutes`/`grpcRoutes`/`tlsRoutes`/`tcpRoutes`/`udpRoutes` lists.
+Move each entry to `route.<key>`, set its `kind`, and move the contents of `spec`
+directly under that entry. Optional native BackendTLSPolicy entries remain under
+`gatewayAPI.backendTLSPolicies`, with required `name` and `spec` and optional
+`namespace`, `apiVersion`, `labels`, and `annotations`.
+
+See [the HTTPRoute example](examples/gateway-api/values.yaml) for an application
+using a shared Gateway. The platform manages the Gateway's HTTPS listener and
+certificate. TLS settings on `ingress` apply only to Ingress.
+
+For cross-namespace Route attachment, the Gateway listener's `allowedRoutes` must
+permit the Route namespace. Cross-namespace backend or certificate references
+require a ReferenceGrant in the **target** namespace, managed by that resource's
+owner outside Helmet. A client application must not grant itself access to another
+application's resources. Attaching a Route to a Gateway in another namespace uses
+`allowedRoutes`, not a ReferenceGrant.
+
+When the application's backend itself serves HTTPS, optionally configure a
+BackendTLSPolicy for its Service:
+
+```yaml
+gatewayAPI:
+  backendTLSPolicies:
+    - name: '{{ include "common.names.fullname" . }}-tls'
+      spec:
+        targetRefs:
+          - group: ""
+            kind: Service
+            name: '{{ include "common.names.fullname" . }}'
+        validation:
+          hostname: app.internal.example.com
+          wellKnownCACertificates: System
+```
+
+The policy must live in the Service's namespace. The backend must serve TLS on the
+Service port referenced by the Route, using a certificate valid for the configured
+hostname and trusted by the configured CA source. This example uses system trust;
+use `caCertificateRefs` for a private CA. Backend TLS is separate from HTTPS
+termination at the Gateway.
+
+Ingress and Routes can coexist during migration; enable them independently.
+
+### Testing
+
+The rendering suite uses a temporary application chart importing local Helmet
+defaults. It checks disabled defaults, every supported kind, multiple resources,
+templates, metadata merging, namespaces, API overrides, backend TLS, Ingress
+coexistence, Service name/port resolution, explicit backends, redirects, and
+configuration errors:
+
+```sh
+helm dependency build charts/helmet --skip-refresh
+python3 -m pip install PyYAML==6.0.3
+python3 -m unittest discover -s tests -v
+```
+
+Run these commands from the repository root. Rendering does not validate native
+specs against installed CRDs or test controller behavior; use server-side dry-run
+and inspect Gateway/Route status conditions on your target cluster before rollout.
+
 ## Parameters
 
 ### Global parameters

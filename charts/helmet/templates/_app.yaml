@@ -11,6 +11,7 @@
 
 {{ include "helmet.hpa" . }}
 {{ include "helmet.ingress" . }}
+{{ include "helmet.gatewayAPI" . }}
 
 {{- if or .Values.secret.data .Values.secret.stringData }}
 {{ include "helmet.secret" . }}

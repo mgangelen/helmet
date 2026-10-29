@@ -1,0 +1,25 @@
+# Use with an application chart that imports Helmet defaults and includes helmet.app.
+# The platform must provide shared-gateway and its HTTPS listener in infrastructure.
+image:
+  repository: nginx
+ports:
+  - name: http
+    containerPort: 80
+    protocol: TCP
+route:
+  main:
+    kind: HTTPRoute
+    parentRefs:
+      - name: shared-gateway
+        namespace: infrastructure
+        sectionName: https
+    hostnames:
+      - app.example.com
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - identifier: app
+            port: http

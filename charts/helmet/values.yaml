@@ -619,6 +619,21 @@ exports:
       ##
       extraRules: []
 
+    ## @section Gateway API parameters
+    ## Platform configuration manages Gateway API CRDs, controllers, Gateways,
+    ## GatewayClasses, ListenerSets and ReferenceGrants separately.
+    ## @param route Named application routes. Kind defaults to HTTPRoute; entries
+    ## are enabled unless enabled: false. Native route spec fields go directly
+    ## under each entry, alongside optional name, namespace, apiVersion and metadata.
+    ## Use backendRefs[].identifier: app to target Helmet's Service and resolve a
+    ## named Service port, e.g. port: http. Explicit native backends are supported.
+    route: {}
+
+    ## @param gatewayAPI.backendTLSPolicies Optional native TLS policies for owned Services
+    ## Entries require name and spec; optional namespace, apiVersion, labels, annotations.
+    gatewayAPI:
+      backendTLSPolicies: []
+
     ## Enable persistence using Persistent Volume Claims
     ## ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
     ##
