@@ -211,24 +211,6 @@ termination at the Gateway.
 
 Ingress and Routes can coexist during migration; enable them independently.
 
-### Testing
-
-The rendering suite uses a temporary application chart importing local Helmet
-defaults. It checks disabled defaults, every supported kind, multiple resources,
-templates, metadata merging, namespaces, API overrides, backend TLS, Ingress
-coexistence, Service name/port resolution, explicit backends, redirects, and
-configuration errors:
-
-```sh
-helm dependency build charts/helmet --skip-refresh
-python3 -m pip install PyYAML==6.0.3
-python3 -m unittest discover -s tests -v
-```
-
-Run these commands from the repository root. Rendering does not validate native
-specs against installed CRDs or test controller behavior; use server-side dry-run
-and inspect Gateway/Route status conditions on your target cluster before rollout.
-
 ## Parameters
 
 ### Global parameters
