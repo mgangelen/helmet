@@ -701,10 +701,10 @@ exports:
     ## @section Gateway API parameters
     ## Infrastructure configuration manages Gateway API CRDs, controllers, Gateways,
     ## GatewayClasses, ListenerSets and ReferenceGrants separately.
-    ## @param route Named application routes. Kind defaults to HTTPRoute; entries
-    ## are enabled by default. Set enabled: false on an entry to omit its resource.
-    ## This flag applies to every supported Route kind. Native spec fields go directly
-    ## under each entry, alongside optional name, namespace, apiVersion and metadata.
+    ## @param route Named application routes; kind defaults to HTTPRoute and entries are enabled by default
+    ## Set enabled: false on an entry to omit its resource. This flag applies to every
+    ## supported Route kind. Native spec fields go directly under each entry, alongside
+    ## optional name, namespace, apiVersion and metadata.
     ## Use backendRefs[].identifier: app to target Helmet's Service and resolve a
     ## named Service port, e.g. port: http. Explicit native backends are supported.
     ## Example 1: HTTP traffic from an existing shared Gateway to this app.

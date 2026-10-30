@@ -83,8 +83,9 @@ ListenerSet, and ReferenceGrant resources; Helmet does not create them.
 Install the [Gateway API CRDs](https://gateway-api.sigs.k8s.io/guides/) and a
 compatible Gateway controller separately. Helmet creates resources, not the CRDs
 or controller. Each resource's features must be supported by your controller.
-The default API version is `gateway.networking.k8s.io/v1`, targeting Gateway API
-1.5+ CRDs. For older installations, set `apiVersion` on each entry to a version
+The default API version is `gateway.networking.k8s.io/v1`. `HTTPRoute`, `GRPCRoute`
+and `TLSRoute` are served at `v1` from Gateway API 1.5; `TCPRoute` and `UDPRoute`
+only from 1.6. For older installations, set `apiVersion` on each entry to a version
 served by your CRDs, for example `gateway.networking.k8s.io/v1alpha2` for older
 TCPRoute/UDPRoute/TLSRoute.
 
@@ -133,13 +134,15 @@ disabling a Route does not disable its policies or filters automatically.
 The default kind is `HTTPRoute`; supported kinds are `HTTPRoute`, `GRPCRoute`,
 `TLSRoute`, `TCPRoute`, and `UDPRoute`.
 
-Resource names default to `<application-fullname>-<route-key>` (truncated to 63
-characters). Set `name` to override this. Entries also accept `namespace` (defaults
-to Helmet's namespace), `apiVersion`, `labels`, and `annotations`. All remaining
-fields become the native Route spec, including `parentRefs`, `hostnames`, and
-`rules`. Route values support templates evaluated in the consuming chart's context.
-Resource metadata merges with `commonLabels` and `commonAnnotations`, with resource
-values taking precedence. Keep route keys and names stable across upgrades.
+Resource names default to `<application-fullname>-<route-key>`. The route key is
+truncated so the result stays within 63 characters, keeping the application prefix
+intact; keys must be non-empty. Set `name` to override this and avoid truncation.
+Entries also accept `namespace` (defaults to Helmet's namespace), `apiVersion`,
+`labels`, and `annotations`. All remaining fields become the native Route spec,
+including `parentRefs`, `hostnames`, and `rules`. Route values support templates
+evaluated in the consuming chart's context. Resource metadata merges with
+`commonLabels` and `commonAnnotations`, with resource values taking precedence.
+Keep route keys and names stable across upgrades.
 
 ### Application Service references
 
@@ -366,6 +369,7 @@ an extra object does not automatically wire it into the Deployment.
 | `clusterDomain`     | Kubernetes Cluster Domain name                                                                             | `"cluster.local"` |
 | `commonLabels`      | Labels to be added to all deployed resources                                                               | `{}`              |
 | `commonAnnotations` | Annotations to be added to all deployed resources                                                          | `{}`              |
+| `extraObjects`      | Additional Kubernetes manifests, evaluated as Helm templates.                                              | `[]`              |
 
 
 ### Image parameters
@@ -481,6 +485,13 @@ an extra object does not automatically wire it into the Deployment.
 | `ingress.secrets`          | If you're providing your own certificates, please use this to add the certificates as secrets | `[]`                     |
 | `ingress.existingSecret`   | It is you own the certificate as secret                                                       | `""`                     |
 | `ingress.extraRules`       | Additional rules to be covered with this ingress record                                       | `[]`                     |
+
+
+### Gateway API parameters
+
+| Name    | Description                                                                             | Value |
+|---------|-----------------------------------------------------------------------------------------|-------|
+| `route` | Named application routes; kind defaults to HTTPRoute and entries are enabled by default | `{}`  |
 
 
 ### Traffic Exposure (Service) parameters

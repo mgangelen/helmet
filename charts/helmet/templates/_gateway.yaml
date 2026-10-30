@@ -62,14 +62,33 @@ spec: {{- toYaml .spec | nindent 2 }}
 {{/* Named application Routes for existing Gateways. */}}
 {{- define "helmet.gateway" -}}
 {{- $context := . -}}
-{{- range $id, $raw := (.Values.route | default dict) -}}
-{{- if or (not (hasKey $raw "enabled")) $raw.enabled -}}
+{{- $route := .Values.route | default dict -}}
+{{- if not (kindIs "map" $route) -}}
+  {{- fail (printf "route must be a map keyed by route identifier; got %s" (kindOf $route)) -}}
+{{- end -}}
+{{- range $id, $raw := $route -}}
+{{- if not (kindIs "map" $raw) -}}
+  {{- fail (printf "route.%v must be a map; got %s" $id (kindOf $raw)) -}}
+{{- end -}}
+{{- if eq (toString $id) "" -}}
+  {{- fail "route keys must be non-empty identifiers" -}}
+{{- end -}}
+{{- $enabled := true -}}
+{{- if hasKey $raw "enabled" -}}
+  {{- $enabled = ne (toString $raw.enabled) "false" -}}
+{{- end -}}
+{{- if $enabled -}}
 {{- $resource := include "common.tplvalues.render" (dict "value" $raw "context" $context) | fromYaml -}}
 {{- $kind := default "HTTPRoute" $resource.kind -}}
 {{- if not (has $kind (list "HTTPRoute" "GRPCRoute" "TCPRoute" "UDPRoute" "TLSRoute")) -}}
   {{- fail (printf "route.%s: unsupported kind %q" $id $kind) -}}
 {{- end -}}
-{{- $name := default (printf "%s-%s" (include "common.names.fullname" $context) $id | trunc 63 | trimSuffix "-") $resource.name -}}
+{{- $prefix := printf "%s-" (include "common.names.fullname" $context | trunc 62 | trimSuffix "-") -}}
+{{- $room := int (sub 63 (len $prefix)) -}}
+{{- if le $room 0 -}}
+  {{- fail (printf "route.%v: application name %q leaves no room for a route suffix; set name explicitly" $id (include "common.names.fullname" $context)) -}}
+{{- end -}}
+{{- $name := default (printf "%s%s" $prefix (trunc $room $id | trimSuffix "-")) $resource.name -}}
 {{- $namespace := default (include "common.names.namespace" $context) $resource.namespace -}}
 {{- $spec := omit $resource "enabled" "name" "namespace" "apiVersion" "kind" "labels" "annotations" -}}
 {{- if eq (len $spec) 0 -}}
